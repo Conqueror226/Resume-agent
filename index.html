@@ -483,13 +483,12 @@ Tone: direct, technically credible, zero flattery, zero fluff. No mention of AI 
 Write ONLY the message. No preamble, no explanation.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://anthropic-proxy.abdoulkaderbonzi.workers.dev', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
