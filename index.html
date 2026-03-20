@@ -4,14 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Security Research Application · Abdoul Kader BONZI</title>
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' 'unsafe-inline';
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src 'self' https://fonts.gstatic.com;
-  connect-src 'self' https://api.anthropic.com;
-  img-src 'self' data:;
-">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap');
 
@@ -404,7 +396,16 @@ function log(t, prompt, text, cls='') {
   t.scrollTop = t.scrollHeight;
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise(resolve => {
+    const start = performance.now();
+    function check(now) {
+      if (now - start >= ms) resolve();
+      else requestAnimationFrame(check);
+    }
+    requestAnimationFrame(check);
+  });
+}
 
 async function runAgent() {
   const apiKey = document.getElementById('apiKey').value.trim();
@@ -469,18 +470,17 @@ CONTACT: abdoulkaderbonzi@gmail.com | +81 070 8513 4046 | linkedin.com/in/desire
 
   const PROMPT = `You are a career strategist writing on behalf of Abdoul Kader BONZI.
 
-Write a professional LinkedIn direct message (160–200 words) to Dr. Jared DeMott, Sr. Director of Global Security and Head of Innovation & Research, who posted about hiring for ${role}, Security Research, and Vulnerability Management roles.
+Write a professional LinkedIn direct message to Dr. Jared DeMott, Sr. Director of Global Security and Head of Innovation & Research, who posted about hiring for ${role}, Security Research, and Vulnerability Management roles.
 
-The message must:
-1. Open with a concise, confident introduction — who BONZI is and why he is reaching out
-2. Lead with the thesis research: PIVOT-Graph — graph-based detection of credential-based lateral movement at authentication time, not post-execution. Name it specifically
-3. Draw a clear connection between the research and the team's focus on AI, automation, and security innovation
-4. Mention 5 years of hands-on network security experience at Tsebo Solutions Group as grounding
-5. Close with a direct, professional CTA — invite a conversation or call
-6. Tone: technically credible, confident, and professional — no fluff, no flattery, no mention of AI tools used to write the message
+Use exactly this structure and tone — punchy, technical, no fluff:
 
-Candidate profile:
-${RESUME}
+1. Open directly with the thesis: PIVOT-Graph — what it does in one sentence (detects lateral movement the moment an identity touches a new host, not after execution artifacts appear)
+2. Second sentence: the technical stack and approach (graph-based, deterministic, Neo4j + Elasticsearch, formal definition of "First Authenticated Pivot")
+3. One line on experience: 5 years enterprise network ops at Tsebo Solutions Group — grounds the research in practice
+4. One line stating interest in the ${role} role and a simple CTA
+5. Sign off: Abdoul Kader BONZI · abdoulkaderbonzi@gmail.com · linkedin.com/in/desireabdoulkader
+
+Tone: direct, technically credible, zero flattery, zero fluff. No mention of AI tools.
 
 Write ONLY the message. No preamble, no explanation.`;
 
