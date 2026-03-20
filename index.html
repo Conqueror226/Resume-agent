@@ -352,7 +352,7 @@ Location: Osaka, Japan
   </a>
 
   <div class="sbar">
-    <span><span class="sdot"></span>Claude API · claude-sonnet-4-20250514</span>
+    <span><span class="sdot"></span>Claude API · claude-sonnet-4-5</span>
     <span id="sright">Waiting for API key</span>
   </div>
 
@@ -480,7 +480,7 @@ Write ONLY the message. No preamble, no explanation.`;
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: PROMPT }]
       })
@@ -498,15 +498,16 @@ Write ONLY the message. No preamble, no explanation.`;
       output.classList.add('on');
       sright.textContent = 'Done · ' + new Date().toLocaleTimeString();
     } else if (data.error) {
-      log(term, '✗', `API error: ${data.error.message}`, 'er');
+      log(term, '✗', `API error [${data.error.type}]: ${data.error.message}`, 'er');
       sright.textContent = 'API error';
     } else {
-      log(term, '✗', 'Unexpected response format', 'er');
+      log(term, '✗', 'Unexpected response: ' + JSON.stringify(data).slice(0, 120), 'er');
       sright.textContent = 'Error';
     }
   } catch (err) {
     cursor.remove();
-    log(term, '✗', 'Network error: ' + err.message, 'er');
+    log(term, '✗', 'Network/fetch error: ' + err.message, 'er');
+    log(term, '!', 'Check: API key valid? CORS? Console for details.', 'dim');
     sright.textContent = 'Network error';
   }
 
