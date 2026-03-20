@@ -4,6 +4,144 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Security Research Application · Abdoul Kader BONZI</title>
+<script data-cfasync="false" defer>
+let role = 'Security Research';
+let keyVisible = false;
+
+function pickRole(btn, r) {
+  document.querySelectorAll('.rb').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  role = r;
+}
+
+function toggleResume(btn) {
+  const body = document.getElementById('resumeBody');
+  const arr = document.getElementById('arr');
+  body.classList.toggle('open');
+  arr.textContent = body.classList.contains('open') ? '▲' : '▼';
+  btn.querySelector('span').textContent = body.classList.contains('open') ? '[ Hide Resume ]' : '[ View Full Resume ]';
+}
+
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  const btn = document.querySelector('.eye-btn');
+  keyVisible = !keyVisible;
+  inp.type = keyVisible ? 'text' : 'password';
+  btn.textContent = keyVisible ? '[ hide ]' : '[ show ]';
+}
+
+function log(t, prompt, text, cls='') {
+  const l = document.createElement('div');
+  l.className = 'tl';
+  l.innerHTML = '<span class="tp">'+prompt+'</span><span class="to '+cls+'">'+text+'</span>';
+  t.appendChild(l);
+  t.scrollTop = t.scrollHeight;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => {
+    const start = performance.now();
+    function check(now) {
+      if (now - start >= ms) resolve();
+      else requestAnimationFrame(check);
+    }
+    requestAnimationFrame(check);
+  });
+}
+
+async function runAgent() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) {
+    document.getElementById('sright').textContent = 'Error: API key required';
+    document.getElementById('apiKey').style.borderColor = 'var(--warn)';
+    return;
+  }
+  document.getElementById('apiKey').style.borderColor = '';
+
+  const btn = document.getElementById('runBtn');
+  const term = document.getElementById('term');
+  const output = document.getElementById('output');
+  const outText = document.getElementById('outText');
+  const sright = document.getElementById('sright');
+
+  btn.disabled = true;
+  term.innerHTML = '';
+  term.classList.add('on');
+  output.classList.remove('on');
+  outText.textContent = '';
+
+  log(term, '>', 'Agent initialized', 'dim');
+  await sleep(300);
+  log(term, '>', 'Target role: ' + role, 'ac');
+  await sleep(250);
+  log(term, '>', 'Candidate profile loaded · BONZI, Abdoul Kader', 'dim');
+  await sleep(300);
+  log(term, '>', 'Resume context injected (PIVOT-Graph, SOC Architecture)', 'dim');
+  await sleep(350);
+  log(term, '>', 'Calling Anthropic API via proxy...', 'ac');
+  sright.textContent = 'Calling API...';
+
+  const cursor = document.createElement('div');
+  cursor.className = 'tl';
+  cursor.innerHTML = '<span class="tp">&gt;</span><span class="to dim">Awaiting response <span class="cursor"></span></span>';
+  term.appendChild(cursor);
+
+  const RESUME = 'CANDIDATE: Desire Abdoul Kader BONZI\nDEGREE: M.Sc. Cybersecurity, Ritsumeikan University, Osaka Japan (2024-2026)\nTHESIS: Enhancing SME Security Posture Through an Open-Source SOC Architecture and Authentication-Time Detection\nKEY RESEARCH: PIVOT-Graph - graph-based detection of credential-based lateral movement at authentication time (not post-execution). Formal definition of First Authenticated Pivot. Stack: Elasticsearch, Neo4j, Python.\nEXPERIENCE: IT Officer, Tsebo Solutions Group (2019-2024): enterprise network admin, segmentation, access control, incident response\nCERTIFICATIONS: CompTIA Security+/Network+/Linux+, Cisco CCNP ENCOR, NVIDIA Deep Learning\nCONTACT: abdoulkaderbonzi@gmail.com | linkedin.com/in/desireabdoulkader';
+
+  const PROMPT = 'You are a career strategist writing on behalf of Abdoul Kader BONZI.\n\nWrite a professional LinkedIn direct message to Dr. Jared DeMott, Sr. Director of Global Security, hiring for ' + role + ' roles.\n\nStructure and tone — punchy, technical, no fluff:\n1. Open with PIVOT-Graph: detects lateral movement the moment an identity touches a new host, not after execution artifacts appear\n2. Technical detail: graph-based, deterministic, Neo4j + Elasticsearch, formal definition of First Authenticated Pivot\n3. One line: 5 years enterprise network ops at Tsebo Solutions Group\n4. Interest in ' + role + ' role + simple CTA\n5. Sign off: Abdoul Kader BONZI · abdoulkaderbonzi@gmail.com · linkedin.com/in/desireabdoulkader\n\nTone: direct, technically credible, zero flattery. No mention of AI tools.\n\nWrite ONLY the message. No preamble.';
+
+  try {
+    const res = await fetch('https://anthropic-proxy.abdoulkaderbonzi.workers.dev', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: PROMPT }]
+      })
+    });
+
+    const data = await res.json();
+    cursor.remove();
+
+    if (data.content && data.content[0] && data.content[0].text) {
+      const txt = data.content[0].text;
+      log(term, '✓', 'Response received · ' + txt.length + ' chars', 'ok');
+      await sleep(200);
+      log(term, '✓', 'Message tailored and ready', 'ok');
+      outText.textContent = txt;
+      output.classList.add('on');
+      sright.textContent = 'Done · ' + new Date().toLocaleTimeString();
+    } else if (data.error) {
+      log(term, '✗', 'API error: ' + data.error.message, 'er');
+      sright.textContent = 'API error';
+    } else {
+      log(term, '✗', 'Unexpected: ' + JSON.stringify(data).slice(0, 120), 'er');
+      sright.textContent = 'Error';
+    }
+  } catch (err) {
+    cursor.remove();
+    log(term, '✗', 'Fetch error: ' + err.message, 'er');
+    sright.textContent = 'Network error';
+  }
+
+  btn.disabled = false;
+  document.getElementById('btnLabel').textContent = '⚡ Re-run Agent · Generate New Message';
+}
+
+function copyOut() {
+  const txt = document.getElementById('outText').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.querySelector('.act-btn.copy');
+    b.textContent = '[ Copied! ]';
+    setTimeout(function(){ b.textContent = '[ Copy Message ]'; }, 2000);
+  });
+}
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -360,175 +498,5 @@ Location: Osaka, Japan
 
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-<script data-cfasync="false">
-let role = 'Security Research';
-let keyVisible = false;
-
-function pickRole(btn, r) {
-  document.querySelectorAll('.rb').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  role = r;
-}
-
-function toggleResume(btn) {
-  const body = document.getElementById('resumeBody');
-  const arr = document.getElementById('arr');
-  body.classList.toggle('open');
-  arr.textContent = body.classList.contains('open') ? '▲' : '▼';
-  btn.querySelector('span').textContent = body.classList.contains('open') ? '[ Hide Resume ]' : '[ View Full Resume ]';
-}
-
-function toggleKey() {
-  const inp = document.getElementById('apiKey');
-  const btn = document.querySelector('.eye-btn');
-  keyVisible = !keyVisible;
-  inp.type = keyVisible ? 'text' : 'password';
-  btn.textContent = keyVisible ? '[ hide ]' : '[ show ]';
-}
-
-function log(t, prompt, text, cls='') {
-  const l = document.createElement('div');
-  l.className = 'tl';
-  l.innerHTML = `<span class="tp">${prompt}</span><span class="to ${cls}">${text}</span>`;
-  t.appendChild(l);
-  t.scrollTop = t.scrollHeight;
-}
-
-function sleep(ms) {
-  return new Promise(resolve => {
-    const start = performance.now();
-    function check(now) {
-      if (now - start >= ms) resolve();
-      else requestAnimationFrame(check);
-    }
-    requestAnimationFrame(check);
-  });
-}
-
-async function runAgent() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) {
-    document.getElementById('sright').textContent = 'Error: API key required';
-    document.getElementById('apiKey').style.borderColor = 'var(--warn)';
-    return;
-  }
-  document.getElementById('apiKey').style.borderColor = '';
-  console.log('[Agent] Starting with key prefix:', apiKey.slice(0, 16) + '...');
-
-  const btn = document.getElementById('runBtn');
-  const term = document.getElementById('term');
-  const output = document.getElementById('output');
-  const outText = document.getElementById('outText');
-  const sright = document.getElementById('sright');
-
-  btn.disabled = true;
-  term.innerHTML = '';
-  term.classList.add('on');
-  output.classList.remove('on');
-  outText.textContent = '';
-
-  log(term, '>', 'Agent initialized', 'dim');
-  await sleep(300);
-  log(term, '>', `Target role selected: ${role}`, 'ac');
-  await sleep(250);
-  log(term, '>', 'Candidate profile loaded · BONZI, Abdoul Kader', 'dim');
-  await sleep(300);
-  log(term, '>', 'Resume context injected (PIVOT-Graph, SOC Architecture)', 'dim');
-  await sleep(350);
-  log(term, '>', 'Calling Anthropic API · claude-sonnet-4-5', 'ac');
-  console.log('[Agent] Sending API request...');
-  sright.textContent = 'Calling API...';
-
-  const cursor = document.createElement('div');
-  cursor.className = 'tl';
-  cursor.innerHTML = `<span class="tp">></span><span class="to dim">Awaiting response <span class="cursor"></span></span>`;
-  term.appendChild(cursor);
-
-  const RESUME = `
-CANDIDATE: Desire Abdoul Kader BONZI
-DEGREE: M.Sc. Cybersecurity — Ritsumeikan University, Osaka Japan (Sept 2024 – Sept 2026)
-THESIS: "Enhancing SME Security Posture Through an Open-Source SOC Architecture and Authentication-Time Detection"
-
-KEY RESEARCH — PIVOT-Graph:
-- Formal definition of "First Authenticated Pivot"
-- Graph-based detection of credential-based lateral movement at authentication time (not post-execution)
-- Deterministic, explainable detection mechanism
-- Stack: Security Onion, Elasticsearch, Neo4j, Python
-
-RESEARCH 2 — Open-Source SOC for SMEs:
-- Lightweight SOC architecture for resource-constrained organizations
-- Log ingestion, authentication telemetry, graph correlation, explainable alerts
-
-EXPERIENCE:
-- IT Officer, Tsebo Solutions Group (2019–2024): enterprise network admin, segmentation, access control, incident response
-
-CERTIFICATIONS: CompTIA Security+/Network+/Linux+, Cisco CCNP ENCOR, NVIDIA Deep Learning
-
-CONTACT: abdoulkaderbonzi@gmail.com | +81 070 8513 4046 | linkedin.com/in/desireabdoulkader`;
-
-  const PROMPT = `You are a career strategist writing on behalf of Abdoul Kader BONZI.
-
-Write a professional LinkedIn direct message to Dr. Jared DeMott, Sr. Director of Global Security and Head of Innovation & Research, who posted about hiring for ${role}, Security Research, and Vulnerability Management roles.
-
-Use exactly this structure and tone — punchy, technical, no fluff:
-
-1. Open directly with the thesis: PIVOT-Graph — what it does in one sentence (detects lateral movement the moment an identity touches a new host, not after execution artifacts appear)
-2. Second sentence: the technical stack and approach (graph-based, deterministic, Neo4j + Elasticsearch, formal definition of "First Authenticated Pivot")
-3. One line on experience: 5 years enterprise network ops at Tsebo Solutions Group — grounds the research in practice
-4. One line stating interest in the ${role} role and a simple CTA
-5. Sign off: Abdoul Kader BONZI · abdoulkaderbonzi@gmail.com · linkedin.com/in/desireabdoulkader
-
-Tone: direct, technically credible, zero flattery, zero fluff. No mention of AI tools.
-
-Write ONLY the message. No preamble, no explanation.`;
-
-  try {
-    const res = await fetch('https://anthropic-proxy.abdoulkaderbonzi.workers.dev', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: PROMPT }]
-      })
-    });
-
-    const data = await res.json();
-    console.log('[Agent] Response status:', res.status, '| data:', JSON.stringify(data).slice(0, 200));
-    cursor.remove();
-
-    if (data.content && data.content[0] && data.content[0].text) {
-      const txt = data.content[0].text;
-      log(term, '✓', `Response received · ${txt.length} chars · ${data.usage?.output_tokens || '?'} tokens`, 'ok');
-      await sleep(200);
-      log(term, '✓', 'Message tailored and ready to send', 'ok');
-      outText.textContent = txt;
-      output.classList.add('on');
-      sright.textContent = 'Done · ' + new Date().toLocaleTimeString();
-    } else if (data.error) {
-      log(term, '✗', `API error [${data.error.type}]: ${data.error.message}`, 'er');
-      sright.textContent = 'API error';
-    } else {
-      log(term, '✗', 'Unexpected response: ' + JSON.stringify(data).slice(0, 120), 'er');
-      sright.textContent = 'Error';
-    }
-  } catch (err) {
-    cursor.remove();
-    console.error('[Agent] Fetch error:', err);
-    log(term, '✗', 'Network/fetch error: ' + err.message, 'er');
-    log(term, '!', 'Check browser console (F12) for full details.', 'dim');
-    sright.textContent = 'Network error';
-  }
-
-  btn.disabled = false;
-  document.getElementById('btnLabel').textContent = '⚡ Re-run Agent · Generate New Message';
-}
-
-function copyOut() {
-  const txt = document.getElementById('outText').textContent;
- 
+</body>
+</html>
