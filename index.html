@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #07090d;
+    --surface: #0d1017;
+    --border: #1a2030;
+    --accent: #00e5ff;
+    --green: #39ff8a;
+    --warn: #ff4d6d;
+    --text: #c9d1e0;
+    --muted: #3d4a5c;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 28px 16px;
+  }
+
+  .grid-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 36px 36px; opacity: 0.25;
+  }
+
+  .wrap { position: relative; z-index: 1; width: 100%; max-width: 780px; }
+
+  .hdr { margin-bottom: 28px; }
+  .hdr .eyebrow {
+    font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hdr .eyebrow::after { content:''; flex:1; height:1px; background: rgba(0,229,255,.15); }
+  .hdr h1 {
+    font-family: var(--font-display); font-size: clamp(24px,5vw,42px);
+    font-weight: 800; color:#fff; line-height:1.05;
+  }
+  .hdr h1 em { color: var(--accent); font-style:normal; }
+  .hdr .sub { margin-top:8px; font-size:11px; color:var(--muted); }
+
+  .card {
+    background: var(--surface); border:1px solid var(--border);
+    border-radius:2px; margin-bottom:12px; overflow:hidden;
+  }
+  .card-hd {
+    display:flex; align-items:center; gap:8px;
+    padding:10px 16px; border-bottom:1px solid var(--border);
+    background: rgba(0,229,255,.025);
+  }
+  .card-hd .dot { width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 7px var(--accent); }
+  .card-hd .ttl { font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:600; }
+  .card-hd .badge {
+    margin-left:auto; font-size:9px; padding:2px 8px;
+    border:1px solid rgba(0,229,255,.3); color:var(--muted); border-radius:2px;
+  }
+  .card-bd { padding:18px; }
+
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .pf label { font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px; }
+  .pf span { font-size:12px; color:var(--text); }
+  .pf span.hi { color:var(--accent); }
+
+  .tags { display:flex;flex-wrap:wrap;gap:5px;margin-top:14px; }
+  .tag {
+    padding:3px 9px; border:1px solid var(--border);
+    font-size:9px; color:var(--muted); border-radius:2px; transition:all .2s;
+  }
+  .tag.on { border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.06); }
+
+  .resume-toggle {
+    width:100%; background:transparent; border:none; border-bottom:1px solid var(--border);
+    color:var(--muted); font-family:var(--font-mono); font-size:10px;
+    letter-spacing:2px; text-transform:uppercase;
+    padding:10px 16px; text-align:left; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center;
+    transition: color .2s;
+  }
+  .resume-toggle:hover { color:var(--accent); }
+  .resume-body {
+    display:none; padding:16px; font-size:11px; line-height:1.8;
+    color:var(--text); white-space:pre-wrap;
+    border-bottom:1px solid var(--border);
+    max-height:260px; overflow-y:auto;
+  }
+  .resume-body.open { display:block; }
+
+  .rgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .rb {
+    padding:10px 6px; border:1px solid var(--border);
+    background:transparent; color:var(--muted);
+    font-family:var(--font-mono); font-size:9px;
+    letter-spacing:1px; text-transform:uppercase;
+    cursor:pointer; transition:all .2s; border-radius:2px;
+  }
+  .rb:hover { border-color:var(--accent); color:var(--accent); }
+  .rb.sel { border-color:var(--accent); color:var(--accent); background:rgba(0,229,255,.07); }
+
+  .key-row { display:flex; gap:8px; align-items:center; }
+  .key-input {
+    flex:1; background: rgba(0,0,0,.3); border:1px solid var(--border);
+    color:var(--text); font-family:var(--font-mono); font-size:12px;
+    padding:10px 14px; border-radius:2px; outline:none; transition:border-color .2s;
+  }
+  .key-input:focus { border-color:var(--accent); }
+  .key-input::placeholder { color:var(--muted); }
+  .eye-btn {
+    padding:10px 12px; background:transparent; border:1px solid var(--border);
+    color:var(--muted); font-family:var(--font-mono); font-size:10px;
+    cursor:pointer; border-radius:2px; transition:all .2s; white-space:nowrap;
+  }
+  .eye-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .key-note { font-size:9px; color:var(--muted); margin-top:6px; }
+  .key-note a { color:var(--accent); text-decoration:none; }
+
+  .send-btn {
+    width:100%; padding:16px;
+    background:transparent; border:1px solid var(--accent);
+    color:var(--accent); font-family:var(--font-display);
+    font-size:13px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+    cursor:pointer; transition:all .3s; border-radius:2px;
+    position:relative; overflow:hidden; margin-bottom:12px;
+  }
+  .send-btn::before {
+    content:''; position:absolute; inset:0;
+    background:var(--accent); transform:translateX(-100%); transition:transform .3s;
+  }
+  .send-btn:hover::before { transform:translateX(0); }
+  .send-btn:hover { color:var(--bg); }
+  .send-btn span { position:relative; z-index:1; }
+  .send-btn:disabled { opacity:.35; cursor:not-allowed; }
+  .send-btn:disabled::before { display:none; }
+
+  .term {
+    background:#040507; border:1px solid var(--border); border-radius:2px;
+    padding:16px; font-size:11px; line-height:2;
+    min-height:80px; display:none; margin-bottom:12px;
+  }
+  .term.on { display:block; }
+  .tl { display:flex; gap:10px; }
+  .tp { color:var(--green); flex-shrink:0; }
+  .to { color:var(--text); }
+  .to.dim { color:var(--muted); }
+  .to.ac { color:var(--accent); }
+  .to.ok { color:var(--green); }
+  .to.er { color:var(--warn); }
+  .cursor { display:inline-block;width:7px;height:13px;background:var(--accent);vertical-align:middle;animation:blink 1s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  .output {
+    border:1px solid var(--green); background:rgba(57,255,138,.03);
+    padding:20px; border-radius:2px; display:none; margin-bottom:12px;
+  }
+  .output.on { display:block; }
+  .out-lbl {
+    font-size:9px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--green); margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .out-lbl::after { content:''; flex:1; height:1px; background:rgba(57,255,138,.2); }
+  .out-text { font-size:12px; line-height:1.85; color:var(--text); white-space:pre-wrap; }
+
+  .action-row { display:flex; gap:8px; margin-top:14px; }
+  .act-btn {
+    padding:8px 14px; background:transparent;
+    font-family:var(--font-mono); font-size:9px;
+    letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all .2s; border-radius:2px;
+  }
+  .act-btn.copy { border:1px solid var(--green); color:var(--green); }
+  .act-btn.copy:hover { background:rgba(57,255,138,.1); }
+  .act-btn.regen { border:1px solid var(--muted); color:var(--muted); }
+  .act-btn.regen:hover { border-color:var(--accent); color:var(--accent); }
+
+  .sbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 0; font-size:9px; color:var(--muted); letter-spacing:1px;
+  }
+  .sdot { width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px;box-shadow:0 0 5px var(--green); }
+
+  @media(max-width:540px){
+    .pgrid{grid-template-columns:1fr;}
+    .rgrid{grid-template-columns:1fr;}
+    .key-row{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="eyebrow">// AI-Powered Job Application · Built with Claude</div>
+    <h1>Security Research<br><em>Application Agent</em></h1>
+    <div class="sub">Candidate: Desire Abdoul Kader BONZI &nbsp;·&nbsp; Target: Dr. Jared DeMott, Sr. Director Global Security</div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="dot"></div><div class="ttl">Candidate Profile</div><div class="badge">Pre-loaded</div></div>
+    <div class="card-bd">
+      <div class="pgrid">
+        <div class="pf"><label>Full Name</label><span>Desire Abdoul Kader BONZI</span></div>
+        <div class="pf"><label>Degree</label><span class="hi">M.Sc. Cybersecurity · Year 2 of 2</span></div>
+        <div class="pf"><label>University</label><span>Ritsumeikan University, Osaka Japan</span></div>
+        <div class="pf"><label>Expected Graduation</label><span>September 2026</span></div>
+        <div class="pf"><label>Thesis</label><span>Graph-Based Early Detection of Credential-Based Lateral Movement</span></div>
+        <div class="pf"><label>Prior Experience</label><span>IT Officer · Tsebo Solutions Group (2019–2024)</span></div>
+      </div>
+      <div class="tags">
+        <span class="tag on">Security Research</span>
+        <span class="tag on">Lateral Movement Detection</span>
+        <span class="tag on">Graph Analytics · Neo4j</span>
+        <span class="tag on">AI for Security</span>
+        <span class="tag on">SOC Architecture</span>
+        <span class="tag on">OSINT</span>
+        <span class="tag">Python</span>
+        <span class="tag">Elasticsearch</span>
+        <span class="tag">Security Onion</span>
+        <span class="tag">CompTIA Security+</span>
+        <span class="tag">CCNP ENCOR</span>
+      </div>
+    </div>
+
+    <button class="resume-toggle" onclick="toggleResume(this)">
+      <span>[ View Full Resume ]</span><span id="arr">▼</span>
+    </button>
+    <div class="resume-body" id="resumeBody">EDUCATION
+──────────────────────────────────────────────
+Ritsumeikan University, Japan
+Master of Computer Science (Cybersecurity) | Sept 2024 – Sept 2026
+
+Thesis: Enhancing SME Security Posture Through an Open-Source SOC Architecture
+and Authentication-Time Detection
+
+Research contributions:
+  • Design of open-source SOC architecture for SMEs
+  • Development of authentication-time detection for credential-based lateral movement
+  • Graph-based modeling of identity-host relationships
+  • Implementation: Security Onion, Elasticsearch, Neo4j, Python
+
+RESEARCH · PUBLICATIONS & PROJECTS
+──────────────────────────────────────────────
+PIVOT-Graph — Authentication Graph Detection System
+  • Detects credential abuse at the moment an identity expands access across hosts
+  • Formal definition of "First Authenticated Pivot"
+  • Detection at authentication time (not post-execution artifacts)
+  • Deterministic pivot detection integrated with SOC monitoring pipelines
+
+Open-Source SOC Architecture for SMEs
+  • Lightweight SOC framework for resource-constrained environments
+  • Log ingestion via Elastic stack
+  • Authentication telemetry analysis + graph-based correlation
+  • Explainable alert generation
+
+PROFESSIONAL EXPERIENCE
+──────────────────────────────────────────────
+IT Officer · Tsebo Solutions Group (2019–2024)
+  • Administered enterprise network infrastructure across industrial sites
+  • Supported secure network segmentation & access control (multi-site)
+  • Managed incident response workflows (IT & operational coordination)
+
+CERTIFICATIONS
+──────────────────────────────────────────────
+  • CompTIA Security+ | Network+ | Linux+
+  • Cisco CCNP ENCOR 350-401
+  • NVIDIA Fundamentals of Deep Learning
+
+CONTACT
+──────────────────────────────────────────────
+Email:    abdoulkaderbonzi@gmail.com
+Phone:    +81 070 8513 4046
+LinkedIn: linkedin.com/in/desireabdoulkader
+Location: Osaka, Japan
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="dot"></div><div class="ttl">Target Role</div></div>
+    <div class="card-bd">
+      <div class="rgrid">
+        <button class="rb sel" onclick="pickRole(this,'Security Research')">Security Research</button>
+        <button class="rb" onclick="pickRole(this,'Red Team')">Red Team</button>
+        <button class="rb" onclick="pickRole(this,'Vulnerability Management')">Vuln Management</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd"><div class="dot"></div><div class="ttl">Anthropic API Key</div><div class="badge">Required to run agent</div></div>
+    <div class="card-bd">
+      <div class="key-row">
+        <input class="key-input" id="apiKey" type="password" placeholder="sk-ant-api03-..." autocomplete="off" />
+        <button class="eye-btn" onclick="toggleKey()">[ show ]</button>
+      </div>
+      <div class="key-note">
+        Your key is never stored or transmitted anywhere except directly to the Anthropic API.
+        Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+      </div>
+    </div>
+  </div>
+
+  <button class="send-btn" id="runBtn" onclick="runAgent()">
+    <span id="btnLabel">⚡ Generate Tailored Message via Claude Agent</span>
+  </button>
+
+  <div class="term" id="term"></div>
+
+  <div class="output" id="output">
+    <div class="out-lbl">Claude Output · Tailored Message for Dr. DeMott</div>
+    <div class="out-text" id="outText"></div>
+    <div class="action-row">
+      <button class="act-btn copy" onclick="copyOut()">[ Copy Message ]</button>
+      <button class="act-btn regen" onclick="runAgent()">[ Re-generate ]</button>
+    </div>
+  </div>
+
+  <div class="sbar">
+    <span><span class="sdot"></span>Claude API · claude-sonnet-4-20250514</span>
+    <span id="sright">Waiting for API key</span>
+  </div>
+
+</div>
+
+<script>
+let role = 'Security Research';
+let keyVisible = false;
+
+function pickRole(btn, r) {
+  document.querySelectorAll('.rb').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  role = r;
+}
+
+function toggleResume(btn) {
+  const body = document.getElementById('resumeBody');
+  const arr = document.getElementById('arr');
+  body.classList.toggle('open');
+  arr.textContent = body.classList.contains('open') ? '▲' : '▼';
+  btn.querySelector('span').textContent = body.classList.contains('open') ? '[ Hide Resume ]' : '[ View Full Resume ]';
+}
+
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  const btn = document.querySelector('.eye-btn');
+  keyVisible = !keyVisible;
+  inp.type = keyVisible ? 'text' : 'password';
+  btn.textContent = keyVisible ? '[ hide ]' : '[ show ]';
+}
+
+function log(t, prompt, text, cls='') {
+  const l = document.createElement('div');
+  l.className = 'tl';
+  l.innerHTML = `<span class="tp">${prompt}</span><span class="to ${cls}">${text}</span>`;
+  t.appendChild(l);
+  t.scrollTop = t.scrollHeight;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runAgent() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey || !apiKey.startsWith('sk-ant')) {
+    document.getElementById('sright').textContent = 'Error: valid API key required';
+    document.getElementById('apiKey').style.borderColor = 'var(--warn)';
+    return;
+  }
+  document.getElementById('apiKey').style.borderColor = '';
+
+  const btn = document.getElementById('runBtn');
+  const term = document.getElementById('term');
+  const output = document.getElementById('output');
+  const outText = document.getElementById('outText');
+  const sright = document.getElementById('sright');
+
+  btn.disabled = true;
+  term.innerHTML = '';
+  term.classList.add('on');
+  output.classList.remove('on');
+  outText.textContent = '';
+
+  log(term, '>', 'Agent initialized', 'dim');
+  await sleep(300);
+  log(term, '>', `Target role selected: ${role}`, 'ac');
+  await sleep(250);
+  log(term, '>', 'Candidate profile loaded · BONZI, Abdoul Kader', 'dim');
+  await sleep(300);
+  log(term, '>', 'Resume context injected (PIVOT-Graph, SOC Architecture)', 'dim');
+  await sleep(350);
+  log(term, '>', 'Calling Anthropic API · claude-sonnet-4-20250514', 'ac');
+  sright.textContent = 'Calling API...';
+
+  const cursor = document.createElement('div');
+  cursor.className = 'tl';
+  cursor.innerHTML = `<span class="tp">></span><span class="to dim">Awaiting response <span class="cursor"></span></span>`;
+  term.appendChild(cursor);
+
+  const RESUME = `
+CANDIDATE: Desire Abdoul Kader BONZI
+DEGREE: M.Sc. Cybersecurity — Ritsumeikan University, Osaka Japan (Sept 2024 – Sept 2026)
+THESIS: "Enhancing SME Security Posture Through an Open-Source SOC Architecture and Authentication-Time Detection"
+
+KEY RESEARCH — PIVOT-Graph:
+- Formal definition of "First Authenticated Pivot"
+- Graph-based detection of credential-based lateral movement at authentication time (not post-execution)
+- Deterministic, explainable detection mechanism
+- Stack: Security Onion, Elasticsearch, Neo4j, Python
+
+RESEARCH 2 — Open-Source SOC for SMEs:
+- Lightweight SOC architecture for resource-constrained organizations
+- Log ingestion, authentication telemetry, graph correlation, explainable alerts
+
+EXPERIENCE:
+- IT Officer, Tsebo Solutions Group (2019–2024): enterprise network admin, segmentation, access control, incident response
+
+CERTIFICATIONS: CompTIA Security+/Network+/Linux+, Cisco CCNP ENCOR, NVIDIA Deep Learning
+
+CONTACT: abdoulkaderbonzi@gmail.com | +81 070 8513 4046 | linkedin.com/in/desireabdoulkader`;
+
+  const PROMPT = `You are a career strategist writing on behalf of Abdoul Kader BONZI.
+
+Write a LinkedIn direct message (160–200 words) to Dr. Jared DeMott, Sr. Director of Global Security and Head of Innovation & Research, who posted about hiring for ${role}, Security Research, and Vulnerability Management roles, and who specifically asked candidates to use Claude AI/automation to send their resume.
+
+The message must:
+1. Open with a bold hook — acknowledge that this very message was generated and delivered by a Claude-powered agent, making it a live proof of AI/automation competency
+2. Connect BONZI's thesis research (PIVOT-Graph, graph-based lateral movement detection at authentication time) directly to the security research and AI+automation work Jared mentioned
+3. Be specific and technical — name the research, not just the topic
+4. Show genuine enthusiasm for the AI x security intersection
+5. Close with a clear, confident CTA (attach resume, request call, etc.)
+6. Tone: confident, direct, technically credible — not generic or sycophantic
+
+Candidate profile:
+${RESUME}
+
+Write ONLY the message. No preamble, no explanation.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: PROMPT }]
+      })
+    });
+
+    const data = await res.json();
+    cursor.remove();
+
+    if (data.content && data.content[0] && data.content[0].text) {
+      const txt = data.content[0].text;
+      log(term, '✓', `Response received · ${txt.length} chars · ${data.usage?.output_tokens || '?'} tokens`, 'ok');
+      await sleep(200);
+      log(term, '✓', 'Message tailored and ready to send', 'ok');
+      outText.textContent = txt;
+      output.classList.add('on');
+      sright.textContent = 'Done · ' + new Date().toLocaleTimeString();
+    } else if (data.error) {
+      log(term, '✗', `API error: ${data.error.message}`, 'er');
+      sright.textContent = 'API error';
+    } else {
+      log(term, '✗', 'Unexpected response format', 'er');
+      sright.textContent = 'Error';
+    }
+  } catch (err) {
+    cursor.remove();
+    log(term, '✗', 'Network error: ' + err.message, 'er');
+    sright.textContent = 'Network error';
+  }
+
+  btn.disabled = false;
+  document.getElementById('btnLabel').textContent = '⚡ Re-run Agent · Generate New Message';
+}
+
+function copyOut() {
+  const txt = document.getElementById('outText').textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const b = document.querySelector('.act-btn.copy');
+    b.textContent = '[ Copied! ]';
+    setTimeout(() => b.textContent = '[ Copy Message ]', 2000);
+  });
+}
+</script>
+</body>
+</html>
