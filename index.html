@@ -1,6 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Research Application · Abdoul Kader BONZI</title>
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://api.anthropic.com;
+  img-src 'self' data:;
+">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap');
 
@@ -322,6 +333,7 @@ Location: Osaka, Japan
     <div class="card-hd"><div class="dot"></div><div class="ttl">Anthropic API Key</div><div class="badge">Required to run agent</div></div>
     <div class="card-bd">
       <div class="key-row">
+        <label for="apiKey" style="display:none">Anthropic API Key</label>
         <input class="key-input" id="apiKey" type="password" placeholder="sk-ant-api03-..." autocomplete="off" />
         <button class="eye-btn" onclick="toggleKey()">[ show ]</button>
       </div>
@@ -396,12 +408,13 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function runAgent() {
   const apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey || !apiKey.startsWith('sk-ant')) {
-    document.getElementById('sright').textContent = 'Error: valid API key required';
+  if (!apiKey) {
+    document.getElementById('sright').textContent = 'Error: API key required';
     document.getElementById('apiKey').style.borderColor = 'var(--warn)';
     return;
   }
   document.getElementById('apiKey').style.borderColor = '';
+  console.log('[Agent] Starting with key prefix:', apiKey.slice(0, 16) + '...');
 
   const btn = document.getElementById('runBtn');
   const term = document.getElementById('term');
@@ -423,7 +436,8 @@ async function runAgent() {
   await sleep(300);
   log(term, '>', 'Resume context injected (PIVOT-Graph, SOC Architecture)', 'dim');
   await sleep(350);
-  log(term, '>', 'Calling Anthropic API · claude-sonnet-4-20250514', 'ac');
+  log(term, '>', 'Calling Anthropic API · claude-sonnet-4-5', 'ac');
+  console.log('[Agent] Sending API request...');
   sright.textContent = 'Calling API...';
 
   const cursor = document.createElement('div');
@@ -487,6 +501,7 @@ Write ONLY the message. No preamble, no explanation.`;
     });
 
     const data = await res.json();
+    console.log('[Agent] Response status:', res.status, '| data:', JSON.stringify(data).slice(0, 200));
     cursor.remove();
 
     if (data.content && data.content[0] && data.content[0].text) {
@@ -506,8 +521,9 @@ Write ONLY the message. No preamble, no explanation.`;
     }
   } catch (err) {
     cursor.remove();
+    console.error('[Agent] Fetch error:', err);
     log(term, '✗', 'Network/fetch error: ' + err.message, 'er');
-    log(term, '!', 'Check: API key valid? CORS? Console for details.', 'dim');
+    log(term, '!', 'Check browser console (F12) for full details.', 'dim');
     sright.textContent = 'Network error';
   }
 
